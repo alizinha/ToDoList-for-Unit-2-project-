@@ -5,6 +5,7 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.service.notification.StatusBarNotification;
 import android.view.KeyEvent;
@@ -17,69 +18,93 @@ import android.widget.EditText;
 import android.widget.ListView;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 
 public class MainActivity extends Activity implements View.OnClickListener, View.OnKeyListener {
 
-    EditText txtItem;
-    Button btnAdd;
-    ListView listItems;
+    EditText toDoEditTxtItem;
+    Button toDoBtnAdd;
+    ListView toDoListItems;
 
-    ArrayList<String> todoItems;
-    ArrayAdapter<String> aa;
+    List<String> toDoItemsList;
+    ArrayAdapter<String> toDoAdapter;
 
-    NotificationManager nm;
+    NotificationManager toDoNotificationManager;
     static final int uniqueID = 123123;
+
+    public static final String MY_APP_PREFS = "MyAppPrefs";
+    public static final String TO_DO_ITEMS_SET = "toDoList";
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        toDoEditTxtItem = (EditText) findViewById(R.id.toDoEditTxtItem);
+        toDoBtnAdd = (Button) findViewById(R.id.toDoBtnAdd);
+        toDoListItems = (ListView) findViewById(R.id.toDoListItems);
 
-        txtItem = (EditText) findViewById(R.id.txtItem);
-        btnAdd = (Button) findViewById(R.id.btnAdd);
-        listItems = (ListView) findViewById(R.id.listItems);
+        toDoBtnAdd.setOnClickListener(this);
+        toDoEditTxtItem.setOnClickListener(this);
 
-        btnAdd.setOnClickListener(this);
-        txtItem.setOnClickListener(this);
+        reloadToDoSet();
+        toDoAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, toDoItemsList);
+        toDoListItems.setAdapter(toDoAdapter);
 
-        todoItems = new ArrayList<String>();
-        aa = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, todoItems);
-        listItems.setAdapter(aa);
+        toDoNotificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+        toDoNotificationManager.cancel(uniqueID);
+    }
 
-        nm = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
-        nm.cancel(uniqueID);
+    private void reloadToDoSet() {
+        SharedPreferences thePrefs = getSharedPreferences(MY_APP_PREFS, 0);
+        Set<String> toDoItemsSet = new HashSet<String>();
+        toDoItemsSet = thePrefs.getStringSet(TO_DO_ITEMS_SET, toDoItemsSet);
+        toDoItemsList = new ArrayList<String>(toDoItemsSet);
+    }
+
+    private void saveToDoList() {
+        SharedPreferences thePrefs = getSharedPreferences(MY_APP_PREFS, 0);
+        SharedPreferences.Editor editor = thePrefs.edit();
+        Set<String> toDoSet = new HashSet<String>(toDoItemsList);
+        editor.putStringSet(TO_DO_ITEMS_SET, toDoSet);
+        editor.commit();
+
     }
 
     private void addItem(String item) {
         if (item.length() > 0) {
-            this.todoItems.add(item);
-            this.aa.notifyDataSetChanged();
-            this.txtItem.setText("");
+            this.toDoItemsList.add(item);
+            this.toDoAdapter.notifyDataSetChanged();
+            this.toDoEditTxtItem.setText("");
+            saveToDoList();
         }
     }
 
     @Override
-    public void onClick(View v) {
-     if (v == this.btnAdd){
-         this.addItem(this.txtItem.getText().toString());
+    public void onClick(View view) {
+     if (view == this.toDoBtnAdd){
+         this.addItem(this.toDoEditTxtItem.getText().toString());
      }
 
         Intent intent = new Intent(this, StatusBarNotification.class);
-        PendingIntent pi = PendingIntent.getActivity(this,0,intent,0);
-        String body = "You add a new to-do";
+        PendingIntent pendingIntent = PendingIntent.getActivity(this,0,intent,0);
+        String body = "You added a new to-do";
         String title = "TO DO";
-        Notification n = new Notification(R.drawable.noitification,body,System.currentTimeMillis());
-        n.setLatestEventInfo(this,title,body,pi);
-        n.defaults = Notification.DEFAULT_ALL;
-        nm.notify(uniqueID,n);
+        Notification notification = new Notification(R.drawable.noitification,body,System.currentTimeMillis());
+        notification.setLatestEventInfo(this, title, body, pendingIntent);
+        notification.defaults = Notification.DEFAULT_ALL;
+        toDoNotificationManager.notify(uniqueID, notification);
+
     }
 
     @Override
     public boolean onKey(View v, int keyCode, KeyEvent event) {
        if (event.getAction()== KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_DPAD_CENTER){
-           this.addItem(this.txtItem.getText().toString());
+           this.addItem(this.toDoEditTxtItem.getText().toString());
        }
         return false;
     }
@@ -109,3 +134,4 @@ public class MainActivity extends Activity implements View.OnClickListener, View
 
 
 }
+

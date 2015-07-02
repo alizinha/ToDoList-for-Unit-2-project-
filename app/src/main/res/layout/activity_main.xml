@@ -7,7 +7,7 @@
     tools:context=".MainActivity">
 
     <EditText
-        android:id="@+id/txtItem"
+        android:id="@+id/toDoEditTxtItem"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:ems="10"/>
@@ -15,11 +15,11 @@
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/btnAdd"
+        android:id="@+id/toDoBtnAdd"
         android:text="Add Item To List"/>
 
     <ListView
-        android:id="@+id/listItems"
+        android:id="@+id/toDoListItems"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
